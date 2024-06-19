@@ -87,6 +87,19 @@ SELECT EMP_NAME "직원명", DEPT_CODE "부서코드", '19'||SUBSTR(EMP_NO, 1, 2
 ||SUBSTR(EMP_NO, 3, 2)||'월 '||SUBSTR(EMP_NO, 5, 2)||'일' "생년월일", 
 (EXTRACT(YEAR FROM SYSDATE))-('19'||SUBSTR(EMP_NO, 1, 2)) "나이(만)" FROM EMPLOYEE;
 
+--10. 직원명, 직급코드, 연봉(원) 조회
+--  단, 연봉은 ￦57,000,000 으로 표시되게 함
+--  연봉은 보너스포인트가 적용된 1년치 급여임
+SELECT EMP_NAME "직원명", JOB_CODE "직급코드", 
+TO_CHAR(((SALARY+(SALARY*NVL(BONUS, 1)))*12), 'L999,999,999') "연봉(원)" FROM EMPLOYEE;
+
+--11. 사원명과, 부서명을 출력하세요.
+--   부서코드가 D5이면 총무부, D6이면 기획부, D9이면 영업부로 처리하시오.(case 사용)
+--   단, 부서코드가 D5, D6, D9 인 직원의 정보만 조회하고, 부서코드 기준으로 오름차순 정렬함.
+SELECT EMP_NAME "사원명", CASE WHEN DEPT_CODE = 'D5' THEN '총무부' 
+WHEN DEPT_CODE = 'D6' THEN '기획부' WHEN DEPT_CODE = 'D9' THEN '영업부' END "부서명"
+FROM EMPLOYEE WHERE DEPT_CODE IN('D5', 'D6', 'D9') ORDER BY DEPT_CODE ASC;
+
 -- 1.1.4 형변환 함수
 --      a. TP_CHAR()
 --      b. TO_DATE()   : 자동 형변환됨
@@ -160,18 +173,15 @@ SELECT
     END "성별" 
 FROM EMPLOYEE;
 
---10. 직원명, 직급코드, 연봉(원) 조회
---  단, 연봉은 ￦57,000,000 으로 표시되게 함
---  연봉은 보너스포인트가 적용된 1년치 급여임
-SELECT EMP_NAME "직원명", JOB_CODE "직급코드", 
-TO_CHAR(((SALARY+(SALARY*NVL(BONUS, 1)))*12), 'L999,999,999') "연봉(원)" FROM EMPLOYEE;
-
---11. 사원명과, 부서명을 출력하세요.
---   부서코드가 D5이면 총무부, D6이면 기획부, D9이면 영업부로 처리하시오.(case 사용)
---   단, 부서코드가 D5, D6, D9 인 직원의 정보만 조회하고, 부서코드 기준으로 오름차순 정렬함.
-SELECT EMP_NAME "사원명", CASE WHEN DEPT_CODE = 'D5' THEN '총무부' 
-WHEN DEPT_CODE = 'D6' THEN '기획부' WHEN DEPT_CODE = 'D9' THEN '영업부' END "부서명"
-FROM EMPLOYEE WHERE DEPT_CODE IN('D5', 'D6', 'D9') ORDER BY DEPT_CODE ASC;
+-- 2.1 다중행 함수(그룹함수)
+-- 2.1.1 SUM : 합
+SELECT SUM(SALARY) FROM EMPLOYEE;
+-- 2.1.2 AVG : 평균
+SELECT AVG(SALARY) FROM EMPLOYEE;
+-- 2.1.3 COUNT : 갯수
+SELECT COUNT(*) FROM EMPLOYEE;
+-- 2.1.4 MAX/MIN
+SELECT MAX(SALARY), MIN(SALARY) FROM EMPLOYEE;
 
 -- 3. GROUP BY & HAVING
 -- 그룹함수 사용시 기준이 되는 값에 따라 각각의 결과값을 출력하도록 해주는 키워드
