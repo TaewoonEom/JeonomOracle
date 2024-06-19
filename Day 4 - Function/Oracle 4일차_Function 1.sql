@@ -147,6 +147,18 @@ SELECT NVL(BONUS, 0)*SALARY FROM EMPLOYEE;
 -- DECODE 함수
 -- 사용법 : DECODE(변하는 값, 조건값, 참일때 값, 조건값, 참일때 값, 모두 아닐때 값)
 -- 예시 : DECODE(변하는 값, 1, '빨강', 2, '노랑', '파랑')
+-- CASE 함수
+-- 사용법 : CASE WHEN 변하는값 = 조건값 THEN 참일때 값 WHEN 변하는값 = 조건값 THEN 참일때 값 ELSE 모두 아닐때 값 END
+-- 예시 : CASE WHEN 변하는 값 = 1 THEN '빨강' WHEN 변하는 값 = 2 THEN '노랑' ELSE '파랑' END
+SELECT
+    EMP_NAME "이름",
+    DECODE(SUBSTR(EMP_NO,8,1), '1', '남', '2', '여', '3', '남', '4', '여', '무') "성별",
+    CASE 
+        WHEN SUBSTR(EMP_NO,8,1) = '1' THEN '남' 
+        WHEN SUBSTR(EMP_NO,8,1) = '2' THEN '여' 
+        ELSE '무' 
+    END "성별" 
+FROM EMPLOYEE;
 
 --10. 직원명, 직급코드, 연봉(원) 조회
 --  단, 연봉은 ￦57,000,000 으로 표시되게 함
@@ -160,3 +172,116 @@ TO_CHAR(((SALARY+(SALARY*NVL(BONUS, 1)))*12), 'L999,999,999') "연봉(원)" FROM
 SELECT EMP_NAME "사원명", CASE WHEN DEPT_CODE = 'D5' THEN '총무부' 
 WHEN DEPT_CODE = 'D6' THEN '기획부' WHEN DEPT_CODE = 'D9' THEN '영업부' END "부서명"
 FROM EMPLOYEE WHERE DEPT_CODE IN('D5', 'D6', 'D9') ORDER BY DEPT_CODE ASC;
+
+-- 3. GROUP BY & HAVING
+-- 그룹함수 사용시 기준이 되는 값에 따라 각각의 결과값을 출력하도록 해주는 키워드
+SELECT DEPT_CODE, SUM(SALARY) FROM EMPLOYEE
+GROUP BY DEPT_CODE
+ORDER BY 1 ASC;
+-- ORA-00937: not a single-group group function
+
+-- 실습1
+-- EMPLOYEE 테이블에서 부서코드, 그룹별 급여의 합계, 그룹별 급여의 평균(정수처리), 
+-- 인원수를 조회하고, 부서코드 순으로 정렬하세요
+SELECT DEPT_CODE, SUM(SALARY), FLOOR(AVG(SALARY)), COUNT(SALARY) FROM EMPLOYEE
+GROUP BY DEPT_CODE
+ORDER BY 1 ASC;
+-- 실습2
+-- EMPLOYEE 테이블에서 부서코드, 보너스를 지급받는 사원 수를 조회하고 부서코드 순으로 정렬하세요
+-- BONUS 컬럼의 값이 존재한다면 그 행을 1로 카운팅, 보너스를 지급받은 사원이 없는 부서도 있음을 확인
+SELECT DEPT_CODE, COUNT(BONUS) FROM EMPLOYEE
+WHERE BONUS IS NOT NULL
+GROUP BY DEPT_CODE
+ORDER BY DEPT_CODE ASC;
+
+-- 실습3
+-- EMPLOYEE 테이블에서 직급이 J1인 사람들을 제외하고 직급별 사원수 및 평균급여를 출력하세요.
+SELECT COUNT(*), FLOOR(AVG(SALARY)) FROM EMPLOYEE
+--WHERE JOB_CODE != 'J1'
+--WHERE JOB_CODE NOT IN 'J1'
+WHERE JOB_CODE <> 'J1'
+GROUP BY JOB_CODE;
+-- 실습4
+-- EMPLOYEE 테이블에서 직급이 J1인 사람들을 제외하고 입사년도별 인원수를 조회해서,
+-- 입사년도 기준으로 오름차순으로 정렬하세요.
+SELECT TO_CHAR(HIRE_DATE, 'YYYY'), COUNT(*) FROM EMPLOYEE
+WHERE JOB_CODE != 'J1'
+--GROUP BY EXTRACT(YEAR FROM HIRE_DATE)
+GROUP BY TO_CHAR(HIRE_DATE, 'YYYY')
+--ORDER BY EXTRACT(YEAR FROM HIRE_DATE) ASC;
+ORDER BY 1 ASC;
+
+-- 실습5
+-- EMPLOYEE 테이블에서 EMP_NO의 8번째 자리가 1, 3이면 '남', 2, 4이면 '여'로 결과를 조회하고,
+-- 성별별 급여의 평균(정수처리), 급여의 합계, 인원수를 조회한 뒤 인원수로 내림차순을 정렬하시오.
+SELECT DECODE(SUBSTR(EMP_NO,8,1), '1', '남', '2', '여', '3', '남', '4', '여', '무') "성별"
+, FLOOR(AVG(SALARY)), SUM(SALARY), COUNT(SALARY)
+FROM EMPLOYEE
+GROUP BY DECODE(SUBSTR(EMP_NO,8,1), '1', '남', '2', '여', '3', '남', '4', '여', '무');
+
+-- 지금까지 한 것
+-- 숫자 처리 함수, 문자 처리 함수, 날짜 처리 함수
+-- 그룹함수 결과이지만 GROUP BY를 쓰면 기준별로 결과가 나옴
+SELECT DEPT_CODE, AVG(SALARY) FROM EMPLOYEE
+GROUP BY DEPT_CODE;
+
+-- 실습6
+-- 부서내 직급별 급여의 합계를 구하시오.
+SELECT DEPT_CODE, JOB_CODE, SUM(SALARY)
+FROM EMPLOYEE
+GROUP BY DEPT_CODE, JOB_CODE
+HAVING SUM(SALARY) >= 5000000
+ORDER BY 1 ASC;
+
+-- 실습7
+-- 부서내 성별 인원수를 구하시오.
+SELECT DEPT_CODE, DECODE(SUBSTR(EMP_NO,8,1), '1', '남', '2', '여', '3', '남', '4', '여', '무') "성별", COUNT(SALARY)
+FROM EMPLOYEE
+GROUP BY DEPT_CODE
+, DECODE(SUBSTR(EMP_NO,8,1), '1', '남', '2', '여', '3', '남', '4', '여', '무')
+ORDER BY 1 ASC;
+
+-- SELECT문에서 조건을 걸때에는 WHERE을 쓰지만
+SELECT * FROM EMPLOYEE
+WHERE SALARY >= 5000000;
+-- GROUP BY한 결과값에 조건을 걸때에는 HAVING을 쓴다.
+
+-- 부서별 인원수가 5명 미만/초과인 레코드를 출력하세요.
+SELECT DEPT_CODE, COUNT(*)
+FROM EMPLOYEE
+GROUP BY DEPT_CODE
+HAVING COUNT(*) < 5;
+
+-- HAVING 실습문제
+-- 실습문제1
+--부서별 인원이 5명보다 많은 부서와 인원수를 출력하세요.
+SELECT DEPT_CODE, COUNT(*)
+FROM EMPLOYEE
+GROUP BY DEPT_CODE
+HAVING COUNT(*) > 5;
+
+-- 실습문제2
+--부서내 직급별 인원수가 3명이상인 직원의 부서코드, 직급코드, 인원수를 출력하세요.
+SELECT DEPT_CODE, JOB_CODE, COUNT(*)
+FROM EMPLOYEE
+GROUP BY DEPT_CODE, JOB_CODE
+HAVING COUNT(*) >= 3;
+
+-- 실습문제3
+--매니져가 관리하는 사원이 2명이상인 매니져아이디와 관리하는 사원수를 출력하세요.
+SELECT EMP_ID, EMP_NAME, MANAGER_ID FROM EMPLOYEE;
+
+SELECT MANAGER_ID, COUNT(*) FROM EMPLOYEE
+GROUP BY MANAGER_ID
+HAVING COUNT(*) >= 2;
+
+-- ROLLUP과 CUBE
+SELECT DEPT_CODE, JOB_CODE, SUM(SALARY)
+FROM EMPLOYEE
+GROUP BY ROLLUP(DEPT_CODE, JOB_CODE)
+ORDER BY 1 ASC;
+
+SELECT DEPT_CODE, JOB_CODE, SUM(SALARY)
+FROM EMPLOYEE
+GROUP BY CUBE(DEPT_CODE, JOB_CODE)
+ORDER BY 1 ASC;
